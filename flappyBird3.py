@@ -2,6 +2,8 @@ from itertools import cycle
 from numpy.random import randint,choice
 import sys
 import neat
+import cPickle as pickle
+import os
 
 
 import pygame
@@ -11,12 +13,15 @@ FPS = 200
 SCREENWIDTH  = 288
 SCREENHEIGHT = 512
 # amount by which base can maximum shift to left
-PIPEGAPSIZE  = 150 # gap between upper and lower part of pipe
+PIPEGAPSIZE  = 180 # gap between upper and lower part of pipe
 BASEY        = SCREENHEIGHT * 0.79
 SCORE = 0
 
 BACKGROUND = pygame.image.load('/home/roshan/Documents/FlappyBird/background.png')
 
+GENERATION = 0
+MAX_FITNESS = 0
+BEST_GENOME = 0
 
 class Bird(pygame.sprite.Sprite):
 
@@ -59,7 +64,7 @@ class Bird(pygame.sprite.Sprite):
     	if self.playerFlapped:
     		self.playerFlapped = False
 
-    	self.y += min(self.playerVelY, BASEY - self.y - self.height)
+    	self.y += min(self.playerVelY, SCREENHEIGHT - self.y - self.height)
     	self.y = max(self.y,0)
     	self.display(self.x,self.y)
 
@@ -174,6 +179,7 @@ def game(genome, config):
 
 	moved = False
 	
+	time = 0
 
 	while True:
 
@@ -186,14 +192,17 @@ def game(genome, config):
 			input = (bird.y,pipe2.x, pipe2.upperY, pipe2.lowerY)
 			centerY = (pipe2.upperY + pipe2.lowerY)/2
 
+		# print(input)
 		vertDist = (((bird.y - centerY)**2)*100)/(512*512)
-		fitness = SCORE - vertDist
+		time += 1
+		
+		fitness = SCORE - vertDist + (time/10.0)
 
 		t = pygame.sprite.spritecollideany(bird,pipeGroup)
 
-		if t!=None:
-			print("GAME OVER")	
-			print("FINAL SCORE IS %d"%fitness)
+		if t!=None or (bird.y== 512 - bird.height) or (bird.y == 0):
+			# print("GAME OVER")	
+			# print("FINAL SCORE IS %d"%fitness)
 			return(fitness)
 			
 		output = net.activate(input)
@@ -204,7 +213,6 @@ def game(genome, config):
 		# 		sys.exit()
 			
 		if output[0]>=0.5:
-			print(output[0])
 			bird.move("UP")
 			moved = True
 		
@@ -219,14 +227,14 @@ def game(genome, config):
 		if pipe1Pos[0] <= int(SCREENWIDTH * 0.2):
 			if pipe1.behindBird == 0:
 				pipe1.behindBird = 1
-				SCORE += 1
+				SCORE += 10
 				print("SCORE IS %d"%(SCORE+vertDist))
 
 		pipe2Pos = pipe2.move()
 		if pipe2Pos[0] <= int(SCREENWIDTH * 0.2):
 			if pipe2.behindBird == 0:
 				pipe2.behindBird = 1
-				SCORE += 1
+				SCORE += 10
 				print("SCORE IS %d"%(SCORE+vertDist))
 		
 		
@@ -240,9 +248,16 @@ def game(genome, config):
 def eval_genomes(genomes, config):
 	i = 0
 	global SCORE
+	global GENERATION, MAX_FITNESS, BEST_GENOME
+
+	GENERATION += 1
 	for genome_id, genome in genomes:
-		print("Genome # : %d"%i)
+		
 		genome.fitness = game(genome, config)
+		print("Gen : %d Genome # : %d  Fitness : %f Max Fitness : %f"%(GENERATION,i,genome.fitness, MAX_FITNESS))
+		if genome.fitness >= MAX_FITNESS:
+			MAX_FITNESS = genome.fitness
+			BEST_GENOME = genome
 		SCORE = 0
 		i+=1
 
@@ -256,7 +271,12 @@ pop.add_reporter(stats)
 
 winner = pop.run(eval_genomes, 30)
 
+print(winner)
 
+outputDir = '/home/roshan/Documents/FlappyBird/bestGenomes'
+os.chdir(outputDir)
+serialNo = len(os.listdir(outputDir))+1
+outputFile = open(str(serialNo)+'_'+str(int(MAX_FITNESS))+'.p','wb' )
 
-
+pickle.dump(winner, outputFile)
 
