@@ -224,14 +224,14 @@ def game(genome, config):
 
 		
 		pipe1Pos = pipe1.move()
-		if pipe1Pos[0] <= int(SCREENWIDTH * 0.2):
+		if pipe1Pos[0] <= int(SCREENWIDTH * 0.2) - int(bird.rect.width/2):
 			if pipe1.behindBird == 0:
 				pipe1.behindBird = 1
 				SCORE += 10
 				print("SCORE IS %d"%(SCORE+vertDist))
 
 		pipe2Pos = pipe2.move()
-		if pipe2Pos[0] <= int(SCREENWIDTH * 0.2):
+		if pipe2Pos[0] <= int(SCREENWIDTH * 0.2) - int(bird.rect.width/2):
 			if pipe2.behindBird == 0:
 				pipe2.behindBird = 1
 				SCORE += 10
