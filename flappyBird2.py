@@ -3,7 +3,6 @@ from numpy.random import randint,choice
 import sys
 
 
-
 import pygame
 from pygame.locals import *
 
@@ -11,7 +10,7 @@ FPS = 30
 SCREENWIDTH  = 288
 SCREENHEIGHT = 512
 # amount by which base can maximum shift to left
-PIPEGAPSIZE  = 150 # gap between upper and lower part of pipe
+PIPEGAPSIZE  = 160 # gap between upper and lower part of pipe
 BASEY        = SCREENHEIGHT * 0.79
 SCORE = 0
 
@@ -59,7 +58,8 @@ class Bird(pygame.sprite.Sprite):
     	if self.playerFlapped:
     		self.playerFlapped = False
 
-    	self.y += min(self.playerVelY, BASEY - self.y - self.height)
+    	self.y += min(self.playerVelY, SCREENHEIGHT - self.y - self.height)
+    	self.y = max(self.y,0)
     	self.display(self.x,self.y)
 
 
@@ -147,6 +147,14 @@ class Pipe(pygame.sprite.Sprite):
 
 def game():
 
+	
+
+	pygame.init()
+
+	FPSCLOCK = pygame.time.Clock()
+	DISPLAY  = pygame.display.set_mode((SCREENWIDTH, SCREENHEIGHT))
+	pygame.display.set_caption('Flappy Bird')
+
 	global SCORE
 
 	bird = Bird(DISPLAY)
@@ -164,29 +172,40 @@ def game():
 	
 
 	moved = False
-	
+	pause =0
 
 	while True:
 
 		DISPLAY.blit(BACKGROUND,(0,0))
 
+		# if (pipe1.x < pipe2.x and pipe1.behindBird==0) or (pipe2.x < pipe1.x and pipe2.behindBird==1):
+		# 	input = (bird.y,pipe1.x, pipe1.upperY, pipe1.lowerY)
+		# 	centerY = (pipe1.upperY + pipe1.lowerY)/2
+		# elif (pipe1.x < pipe2.x and pipe1.behindBird==1) or (pipe2.x < pipe1.x and pipe2.behindBird==0):
+		# 	input = (bird.y,pipe2.x, pipe2.upperY, pipe2.lowerY)
+		# 	centerY = (pipe2.upperY + pipe2.lowerY)/2
+
+		# print(input)
+
 		t = pygame.sprite.spritecollideany(bird,pipeGroup)
 
-		if t!=None:
+		if t!=None or (bird.y== 512 - bird.height) or (bird.y == 0):
 			print("GAME OVER")
 			print("FINAL SCORE IS %d"%SCORE)
 			return(SCORE)
 			
 
+		
 		for event in pygame.event.get():
-			if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
+			if event.type == QUIT or (event.type == KEYDOWN and (event.key == K_ESCAPE )):
 				pygame.quit()
 				sys.exit()
-			if event.type == KEYDOWN and event.key == K_SPACE :
+			if event.type == KEYDOWN and (event.key == K_SPACE or event.key == K_RETURN):
 				bird.move("UP")
 				moved = True
-			
-
+			if event.type == KEYDOWN and event.key == K_m :
+				pause=1
+		
 
 		if moved == False:
 			bird.move(None)
@@ -194,22 +213,15 @@ def game():
 			moved = False
 
 		
-
-
-
 		pipe1Pos = pipe1.move()
-		
-
-		if pipe1Pos[0] <= int(SCREENWIDTH * 0.2):
+		if pipe1Pos[0] <= int(SCREENWIDTH * 0.2) - int(bird.rect.width/2):
 			if pipe1.behindBird == 0:
 				pipe1.behindBird = 1
 				SCORE += 1
 				print("SCORE IS %d"%SCORE)
 
-
-
 		pipe2Pos = pipe2.move()
-		if pipe2Pos[0] <= int(SCREENWIDTH * 0.2):
+		if pipe2Pos[0] <= int(SCREENWIDTH * 0.2) - int(bird.rect.width/2):
 			if pipe2.behindBird == 0:
 				pipe2.behindBird = 1
 				SCORE += 1
@@ -217,24 +229,15 @@ def game():
 		
 		
 
+		if pause==0:
+			pygame.display.update()
 
-		pygame.display.update()
 		FPSCLOCK.tick(FPS)
 
 
 
 
 
-
-
-
-
-
-pygame.init()
-
-FPSCLOCK = pygame.time.Clock()
-DISPLAY  = pygame.display.set_mode((SCREENWIDTH, SCREENHEIGHT))
-pygame.display.set_caption('Flappy Bird')
 
 
 game()

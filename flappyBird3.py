@@ -13,7 +13,7 @@ FPS = 200
 SCREENWIDTH  = 288
 SCREENHEIGHT = 512
 # amount by which base can maximum shift to left
-PIPEGAPSIZE  = 180 # gap between upper and lower part of pipe
+PIPEGAPSIZE  = 160 # gap between upper and lower part of pipe
 BASEY        = SCREENHEIGHT * 0.79
 SCORE = 0
 
