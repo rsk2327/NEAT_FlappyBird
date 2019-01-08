@@ -10,3 +10,8 @@ flappyBird3.py : Implements NEAT algorithm to train game playing bot ( Neural Ne
 testBird.py : Runs 10 runs of a given trained model to evaluate its performance
 
 The NEAT algorithm is implemented using the NEAT-Python package. Ensure that the package is installed before running any of the codes.
+
+[![Watch the video](https://img.youtube.com/vi/T-D1KVIuvjA/maxresdefault.jpg)](https://www.youtube.com/watch?v=Nv1oohAwkeo)
+
+[![Watch the video](https://i.ibb.co/NFrx7dK/NEAT.png)](https://www.youtube.com/watch?v=Nv1oohAwkeo)
+
