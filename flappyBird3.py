@@ -2,14 +2,15 @@ from itertools import cycle
 from numpy.random import randint,choice
 import sys
 import neat
-import cPickle as pickle
+import pickle as pickle
 import os
 
+from pathlib import Path
 
 import pygame
 from pygame.locals import *
 
-FPS = 200
+FPS = 600
 SCREENWIDTH  = 288
 SCREENHEIGHT = 512
 # amount by which base can maximum shift to left
@@ -17,10 +18,10 @@ PIPEGAPSIZE  = 160 # gap between upper and lower part of pipe
 BASEY        = SCREENHEIGHT * 0.79
 SCORE = 0
 
-BACKGROUND = pygame.image.load('/home/roshan/Documents/FlappyBird/background.png')
+BACKGROUND = pygame.image.load(os.getcwd() + '/background.png')
 
 GENERATION = 0
-MAX_FITNESS = 0
+MAX_FITNESS = float('-inf')
 BEST_GENOME = 0
 
 class Bird(pygame.sprite.Sprite):
@@ -29,7 +30,7 @@ class Bird(pygame.sprite.Sprite):
 
         pygame.sprite.Sprite.__init__(self)
 
-        self.image = pygame.image.load('/home/roshan/Documents/FlappyBird/redbird.png')
+        self.image = pygame.image.load(os.getcwd() + '/redbird.png')
 
         self.x = int(SCREENWIDTH * 0.2)
         self.y = SCREENHEIGHT*0.5
@@ -92,8 +93,8 @@ class Pipe(pygame.sprite.Sprite):
 		pygame.sprite.Sprite.__init__(self)
 
 		self.screen = screen
-		self.lowerBlock = PipeBlock('/home/roshan/Documents/FlappyBird/pipe-red.png',False)
-		self.upperBlock = PipeBlock('/home/roshan/Documents/FlappyBird/pipe-red.png',True)
+		self.lowerBlock = PipeBlock(os.getcwd() +'/pipe-red.png',False)
+		self.upperBlock = PipeBlock(os.getcwd() +'/pipe-red.png',True)
 		
 
 		self.pipeWidth = self.upperBlock.rect.width
@@ -181,15 +182,20 @@ def game(genome, config):
 	
 	time = 0
 
-	while True:
+	running = True
+	while running:
+
+		for event in pygame.event.get():
+			if event.type == pygame.QUIT:
+				running = False
 
 		DISPLAY.blit(BACKGROUND,(0,0))
 
 		if (pipe1.x < pipe2.x and pipe1.behindBird==0) or (pipe2.x < pipe1.x and pipe2.behindBird==1):
-			input = (bird.y,pipe1.x, pipe1.upperY, pipe1.lowerY)
+			inp = (bird.y,pipe1.x, pipe1.upperY, pipe1.lowerY)
 			centerY = (pipe1.upperY + pipe1.lowerY)/2
 		elif (pipe1.x < pipe2.x and pipe1.behindBird==1) or (pipe2.x < pipe1.x and pipe2.behindBird==0):
-			input = (bird.y,pipe2.x, pipe2.upperY, pipe2.lowerY)
+			inp = (bird.y,pipe2.x, pipe2.upperY, pipe2.lowerY)
 			centerY = (pipe2.upperY + pipe2.lowerY)/2
 
 		# print(input)
@@ -205,7 +211,7 @@ def game(genome, config):
 			# print("FINAL SCORE IS %d"%fitness)
 			return(fitness)
 			
-		output = net.activate(input)
+		output = net.activate(inp)
 		
 		# for event in pygame.event.get():
 		# 	if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
@@ -228,14 +234,14 @@ def game(genome, config):
 			if pipe1.behindBird == 0:
 				pipe1.behindBird = 1
 				SCORE += 10
-				print("SCORE IS %d"%(SCORE+vertDist))
+				print("SCORE IS {}".format(SCORE+vertDist))
 
 		pipe2Pos = pipe2.move()
 		if pipe2Pos[0] <= int(SCREENWIDTH * 0.2) - int(bird.rect.width/2):
 			if pipe2.behindBird == 0:
 				pipe2.behindBird = 1
 				SCORE += 10
-				print("SCORE IS %d"%(SCORE+vertDist))
+				print("SCORE IS {}".format(SCORE+vertDist))
 		
 		
 
@@ -246,20 +252,22 @@ def game(genome, config):
 
 
 def eval_genomes(genomes, config):
-	i = 0
 	global SCORE
 	global GENERATION, MAX_FITNESS, BEST_GENOME
 
 	GENERATION += 1
+	i = 0
 	for genome_id, genome in genomes:
-		
-		genome.fitness = game(genome, config)
-		print("Gen : %d Genome # : %d  Fitness : %f Max Fitness : %f"%(GENERATION,i,genome.fitness, MAX_FITNESS))
-		if genome.fitness >= MAX_FITNESS:
-			MAX_FITNESS = genome.fitness
-			BEST_GENOME = genome
-		SCORE = 0
 		i+=1
+		genome.fitness = game(genome, config)
+		if genome.fitness is None:
+			genome.fitness = float('-inf') #fixes errors on early termination
+		print("Gen : {} Genome # : {}  Fitness : {} Max Fitness : {}".format(GENERATION,i,genome.fitness, MAX_FITNESS))
+		if (genome.fitness):
+			if genome.fitness >= MAX_FITNESS:
+				MAX_FITNESS = genome.fitness
+				BEST_GENOME = genome
+		SCORE = 0
 
 config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
                          neat.DefaultSpeciesSet, neat.DefaultStagnation,
@@ -273,7 +281,8 @@ winner = pop.run(eval_genomes, 30)
 
 print(winner)
 
-outputDir = '/home/roshan/Documents/FlappyBird/bestGenomes'
+outputDir = os.getcwd() + '/bestGenomes'
+Path(outputDir).mkdir(parents =True, exist_ok=True)
 os.chdir(outputDir)
 serialNo = len(os.listdir(outputDir))+1
 outputFile = open(str(serialNo)+'_'+str(int(MAX_FITNESS))+'.p','wb' )
